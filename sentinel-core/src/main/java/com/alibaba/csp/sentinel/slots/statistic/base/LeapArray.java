@@ -147,6 +147,9 @@ public abstract class LeapArray<T> {
                     // Successfully updated, return the created bucket.
                     return window;
                 } else {
+                    // 让出cpu占用，但是该线程可能在下一轮cpu调度中获取cpu时间，造成cpu空轮询。
+                    // 这里是一个优化，在cas操作中防止cpu空轮询
+                    // 一旦有一个cas操作成功，则在下一次轮询时就不会进入创建逻辑
                     // Contention failed, the thread will yield its time slice to wait for bucket available.
                     Thread.yield();
                 }

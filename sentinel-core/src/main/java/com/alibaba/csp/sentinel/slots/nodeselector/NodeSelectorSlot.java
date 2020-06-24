@@ -152,6 +152,8 @@ public class NodeSelectorSlot extends AbstractLinkedProcessorSlot<Object> {
          * The answer is all {@link DefaultNode}s with same resource name share one
          * {@link ClusterNode}. See {@link ClusterBuilderSlot} for detail.
          */
+        // context 对象是线程安全的，使用的ThreadLocal
+        // 在每一个context下产生一个node
         DefaultNode node = map.get(context.getName());
         if (node == null) {
             synchronized (this) {

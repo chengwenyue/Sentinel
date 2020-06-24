@@ -61,18 +61,31 @@ public class RateLimiterController implements TrafficShapingController {
         // Expected pass time of this request.
         long expectedTime = costTime + latestPassedTime.get();
 
+        // 当latestPassedTime为初始值或者长时间没有请求导致latestPassedTime值较小，
+        // 此时不能控制并发的情况，可能会导致多个线程同时通过
+
         if (expectedTime <= currentTime) {
             // Contention may exist here, but it's okay.
+            // 能解决问题，但是没必要
+//            if(!latestPassedTime.compareAndSet(expectedTime - costTime,currentTime+costTime)){
+//                return canPass(node,acquireCount,prioritized);
+//            }
+//            latestPassedTime.set(currentTime+costTime);
+
             latestPassedTime.set(currentTime);
             return true;
         } else {
             // Calculate the time to wait.
+            // 计算等待时间，等待时间 = 单次花费时间 + 上次通过时间 - 当前时间
             long waitTime = costTime + latestPassedTime.get() - TimeUtil.currentTimeMillis();
             if (waitTime > maxQueueingTimeMs) {
                 return false;
             } else {
+                // 原子自增时间，返回更新后的值 = 单次花费时间 + 上次通过时间
                 long oldTime = latestPassedTime.addAndGet(costTime);
                 try {
+                    // 如果更新后的值大于最大等待时长，那么说明有其他线程通过了，并增加了latestPassedTime的值
+                    // 那么本线程竞争失败，进行回滚
                     waitTime = oldTime - TimeUtil.currentTimeMillis();
                     if (waitTime > maxQueueingTimeMs) {
                         latestPassedTime.addAndGet(-costTime);

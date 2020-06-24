@@ -90,6 +90,7 @@ public class ExceptionRatioDegradeDemo {
                             block.addAndGet(1);
                         } catch (Throwable t) {
                             bizException.incrementAndGet();
+
                             Tracer.trace(t);
                         } finally {
                             total.addAndGet(1);

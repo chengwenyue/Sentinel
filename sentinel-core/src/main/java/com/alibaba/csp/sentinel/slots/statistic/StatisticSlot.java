@@ -59,6 +59,7 @@ public class StatisticSlot extends AbstractLinkedProcessorSlot<DefaultNode> {
             fireEntry(context, resourceWrapper, node, count, prioritized, args);
 
             // Request passed, add thread count and pass count.
+            // 增加线程量和请求量
             node.increaseThreadNum();
             node.addPassRequest(count);
 
@@ -130,11 +131,13 @@ public class StatisticSlot extends AbstractLinkedProcessorSlot<DefaultNode> {
             // Calculate response time (use completeStatTime as the time of completion).
             long completeStatTime = TimeUtil.currentTimeMillis();
             context.getCurEntry().setCompleteTimestamp(completeStatTime);
+            // 计算单次相应时长
             long rt = completeStatTime - context.getCurEntry().getCreateTimestamp();
 
             Throwable error = context.getCurEntry().getError();
 
             // Record response time and success count.
+            // 记录RT时间 并减少线程数
             recordCompleteFor(node, count, rt, error);
             recordCompleteFor(context.getCurEntry().getOriginNode(), count, rt, error);
             if (resourceWrapper.getEntryType() == EntryType.IN) {

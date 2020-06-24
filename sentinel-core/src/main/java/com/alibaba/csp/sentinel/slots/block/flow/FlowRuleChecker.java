@@ -50,6 +50,7 @@ public class FlowRuleChecker {
         if (rules != null) {
             for (FlowRule rule : rules) {
                 if (!canPassCheck(rule, context, node, count, prioritized)) {
+                    // 有一个规则通不过就抛异常
                     throw new FlowException(rule.getLimitApp(), rule);
                 }
             }
@@ -63,20 +64,24 @@ public class FlowRuleChecker {
 
     public boolean canPassCheck(/*@NonNull*/ FlowRule rule, Context context, DefaultNode node, int acquireCount,
                                                     boolean prioritized) {
+        // 限制app，默认是LIMIT_APP_DEFAULT，即不限制来源app
         String limitApp = rule.getLimitApp();
         if (limitApp == null) {
             return true;
         }
 
+        // 是否是集群模式
         if (rule.isClusterMode()) {
             return passClusterCheck(rule, context, node, acquireCount, prioritized);
         }
 
+        // 本地模式
         return passLocalCheck(rule, context, node, acquireCount, prioritized);
     }
 
     private static boolean passLocalCheck(FlowRule rule, Context context, DefaultNode node, int acquireCount,
                                           boolean prioritized) {
+        // 根据流控规则找到一个节点
         Node selectedNode = selectNodeByRequesterAndStrategy(rule, context, node);
         if (selectedNode == null) {
             return true;
@@ -118,7 +123,9 @@ public class FlowRuleChecker {
         int strategy = rule.getStrategy();
         String origin = context.getOrigin();
 
+        // 来源origin和限制规则的app一致， 并且不是系统默认origin
         if (limitApp.equals(origin) && filterOrigin(origin)) {
+            // 执行来源应用限制
             if (strategy == RuleConstant.STRATEGY_DIRECT) {
                 // Matches limit origin, return origin statistic node.
                 return context.getOriginNode();
